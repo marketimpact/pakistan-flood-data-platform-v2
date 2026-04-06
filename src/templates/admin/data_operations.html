@@ -1,0 +1,128 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label='core' %}">Core</a>
+&rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+
+<div class="module">
+    <h2>System Status</h2>
+    <table>
+        <tr>
+            <th>Total Gauges:</th>
+            <td>{{ gauge_count }}</td>
+        </tr>
+        <tr>
+            <th>Total Readings:</th>
+            <td>{{ reading_count }}</td>
+        </tr>
+        <tr>
+            <th>Total Predictions:</th>
+            <td>{{ prediction_count }}</td>
+        </tr>
+        {% if last_update %}
+        <tr>
+            <th>Last Data Update:</th>
+            <td>{{ last_update }}</td>
+        </tr>
+        {% endif %}
+    </table>
+</div>
+
+<div class="module">
+    <h2>🔄 Collect Forecast Data from Google Flood Hub</h2>
+    <p>Fetch forecast data for Pakistan's flood monitoring gauges from Google Flood Hub API.</p>
+    
+    <form method="post" action="{% url 'admin:collect_forecast' %}">
+        {% csrf_token %}
+        
+        <fieldset class="module aligned">
+            <div class="form-row">
+                <div>
+                    <label for="days">Days of Data:</label>
+                    <select name="days" id="days">
+                        <option value="7" selected>7 days (Recommended)</option>
+                        <option value="3">3 days (Quick)</option>
+                        <option value="14">14 days (Extended)</option>
+                        <option value="30">30 days (Full history)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div>
+                    <label for="batch_size">Batch Size:</label>
+                    <select name="batch_size" id="batch_size">
+                        <option value="100" selected>100 gauges/batch</option>
+                        <option value="50">50 gauges/batch</option>
+                        <option value="200">200 gauges/batch</option>
+                        <option value="500">500 gauges/batch (max)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="submit-row">
+                <input type="submit" value="🔄 Collect Forecast Data" class="default" />
+            </div>
+        </fieldset>
+    </form>
+    
+    <p class="help">
+        <strong>Note:</strong> Daily automatic collection runs at 2 AM UTC (7 AM Pakistan time). 
+        This collects both historical readings and future predictions from Google Flood Hub API.
+    </p>
+</div>
+
+<div class="module">
+    <h2>📈 Update Daily Readings</h2>
+    <p>Update daily readings using the latest forecast data.</p>
+    
+    <form method="post" action="{% url 'admin:update_readings' %}" style="display: inline;">
+        {% csrf_token %}
+        <input type="submit" value="📈 Update Daily Readings" class="default" />
+    </form>
+    
+    <form method="post" action="{% url 'admin:update_readings' %}" style="display: inline; margin-left: 10px;">
+        {% csrf_token %}
+        <input type="hidden" name="force" value="true" />
+        <input type="submit" value="📈 Force Update All Gauges" class="default" onclick="return confirm('This will force update all gauges. Are you sure?')" />
+    </form>
+    
+    <p class="help">
+        <strong>Note:</strong> Use "Update Daily Readings" for normal updates, or "Force Update All Gauges" to refresh data for all gauges regardless of when they were last updated.
+    </p>
+</div>
+
+<style>
+.alert {
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+.alert-error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+</style>
+{% endblock %}

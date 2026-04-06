@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pakistan Flood Data Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        /* Alert Summary Bar */
+        .alert-summary {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .alert-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .alert-critical {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .alert-stale {
+            background-color: #e2e3e5;
+            color: #383d41;
+            border: 1px solid #d6d8db;
+        }
+        .alert-nodata {
+            background-color: #cce5ff;
+            color: #004085;
+            border: 1px solid #b8daff;
+        }
+        .alert-normal {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-card h3 {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+        }
+        .section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .actions {
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-right: 10px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .logout {
+            float: right;
+            background-color: #dc3545;
+        }
+        .logout:hover {
+            background-color: #c82333;
+        }
+        .messages {
+            margin-bottom: 20px;
+        }
+        .message {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        /* Status badges */
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .status-critical {
+            background-color: #dc3545;
+            color: white;
+        }
+        .status-warning {
+            background-color: #ffc107;
+            color: #333;
+        }
+        .status-normal {
+            background-color: #28a745;
+            color: white;
+        }
+        .status-stale {
+            background-color: #6c757d;
+            color: white;
+        }
+        .status-no-data {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        /* Gauge monitoring table */
+        .gauge-table {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .gauge-table table {
+            width: 100%;
+        }
+        .gauge-row-critical {
+            background-color: #f8d7da;
+        }
+        .gauge-row-warning {
+            background-color: #fff3cd;
+        }
+        .gauge-row-stale {
+            background-color: #f8f9fa;
+        }
+        .gauge-row-nodata {
+            background-color: #e7f3ff;
+        }
+        
+        /* Filters */
+        .filters {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .filter-btn {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            background-color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .filter-btn:hover {
+            background-color: #f8f9fa;
+        }
+        .filter-btn.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Pakistan Flood Data Dashboard</h1>
+        <p>Real-time flood monitoring using Google Flood Hub API</p>
+        {% if user.is_authenticated %}
+            <p>Welcome, {{ user.username }}!</p>
+            <a href="/supersecretadminpanel/logout/" class="btn logout">Logout</a>
+        {% else %}
+            <a href="/supersecretadminpanel/" class="btn logout">Admin Login</a>
+        {% endif %}
+    </div>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Alert Summary -->
+    {% if total_alerts > 0 %}
+    <div class="alert-summary">
+        <strong>System Alerts:</strong>
+        {% if critical_count > 0 %}
+        <div class="alert-item alert-critical">
+            🚨 {{ critical_count }} Critical
+        </div>
+        {% endif %}
+        {% if warning_count > 0 %}
+        <div class="alert-item alert-warning">
+            ⚠️ {{ warning_count }} Warning{{ warning_count|pluralize }}
+        </div>
+        {% endif %}
+        {% if stale_count > 0 %}
+        <div class="alert-item alert-stale">
+            ⏰ {{ stale_count }} Stale
+        </div>
+        {% endif %}
+        {% if no_data_count > 0 %}
+        <div class="alert-item alert-nodata">
+            📊 {{ no_data_count }} No Data
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="alert-summary">
+        <div class="alert-item alert-normal">
+            ✅ All Systems Normal - No Active Alerts
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="actions">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="{% url 'export_readings_csv' %}" class="btn">📊 Export CSV</a>
+            <a href="/api/docs/" class="btn">📖 API Docs</a>
+            <a href="/supersecretadminpanel/" class="btn">⚙️ Admin Panel</a>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat-card">
+            <h3>Total Gauges</h3>
+            <div class="number">{{ gauge_count }}</div>
+            <small>Virtual AI Monitoring Points</small>
+        </div>
+        <div class="stat-card">
+            <h3>Quality Verified</h3>
+            <div class="number" style="color: #28a745;">{{ verified_gauge_count }}</div>
+            <small>Google Validated Gauges</small>
+        </div>
+        <div class="stat-card">
+            <h3>Total Readings</h3>
+            <div class="number">{{ reading_count }}</div>
+            <small>Historical Measurements</small>
+        </div>
+        <div class="stat-card">
+            <h3>Predictions</h3>
+            <div class="number" style="color: #17a2b8;">{{ prediction_count }}</div>
+            <small>Future Forecasts</small>
+        </div>
+        <div class="stat-card">
+            <h3>Data Coverage</h3>
+            <div class="number" style="color: {% if gauges_with_readings > 0 %}#28a745{% else %}#dc3545{% endif %};">
+                {{ gauges_with_readings }}
+            </div>
+            <small>Gauges with Data</small>
+        </div>
+        <div class="stat-card">
+            <h3>Active Alerts</h3>
+            <div class="number" style="color: {% if total_alerts > 0 %}#dc3545{% else %}#28a745{% endif %};">
+                {{ total_alerts }}
+            </div>
+            <small>Warnings & Issues</small>
+        </div>
+        <div class="stat-card">
+            <h3>Provinces Covered</h3>
+            <div class="number" style="color: #6f42c1;">{{ provinces_covered }}</div>
+            <small>Administrative Regions</small>
+        </div>
+        <div class="stat-card">
+            <h3>Districts Covered</h3>
+            <div class="number" style="color: #6f42c1;">{{ districts_covered }}</div>
+            <small>Local Administrative Units</small>
+        </div>
+    </div>
+
+    <!-- Geographic Distribution -->
+    {% if province_stats %}
+    <div class="section">
+        <h2>🗺️ Geographic Distribution</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">
+            {% for province in province_stats %}
+            {% if province.province in "Punjab,Sindh,Balochistan,Khyber Pakhtunkhwa,Gilgit-Baltistan,Azad Jammu and Kashmir,Islamabad Capital Territory" %}
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="margin: 0; color: #333;">{{ province.province }}</h4>
+                        <small style="color: #666;">Province</small>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 24px; font-weight: bold; color: #007bff;">{{ province.count }}</div>
+                        <small style="color: #666;">gauges</small>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Gauge Monitoring Table -->
+    <div class="section">
+        <h2>All Gauges Monitoring Status</h2>
+        
+        <div class="filters">
+            <span>Filter by Status:</span>
+            <button class="filter-btn active" onclick="filterGauges('all')">All ({{ gauge_count }})</button>
+            <button class="filter-btn" onclick="filterGauges('critical')">Critical ({{ critical_count }})</button>
+            <button class="filter-btn" onclick="filterGauges('warning')">Warning ({{ warning_count }})</button>
+            <button class="filter-btn" onclick="filterGauges('stale')">Stale ({{ stale_count }})</button>
+            <button class="filter-btn" onclick="filterGauges('no_data')">No Data ({{ no_data_count }})</button>
+        </div>
+        
+        <div class="filters" style="margin-top: 10px;">
+            <span>Filter by Province:</span>
+            <button class="filter-btn province-filter active" onclick="filterByProvince('all')">All Provinces</button>
+            {% for province in province_stats %}{% if forloop.counter <= 5 %}
+            <button class="filter-btn province-filter" onclick="filterByProvince('{{ province.province }}')">{{ province.province }} ({{ province.count }})</button>
+            {% endif %}{% endfor %}
+        </div>
+        
+        {% if page_obj %}
+        <div style="margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 4px;">
+            <span>Showing page {{ page_obj.number }} of {{ total_pages }} ({{ gauge_count }} total gauges)</span>
+            <div style="margin-top: 10px;">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}" class="btn" style="background-color: #6c757d; padding: 5px 10px; font-size: 14px;">← Previous</a>
+                {% endif %}
+                
+                <span style="margin: 0 10px;">Page {{ page_obj.number }} of {{ total_pages }}</span>
+                
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="btn" style="background-color: #6c757d; padding: 5px 10px; font-size: 14px;">Next →</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if gauges_with_status %}
+        <div class="gauge-table">
+            <table id="gaugeTable">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Gauge ID</th>
+                        <th>Name</th>
+                        <th>Location</th>
+                        <th>Quality</th>
+                        <th>Last Reading</th>
+                        <th>Water Level (m)</th>
+                        <th>Last Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for gauge_info in gauges_with_status %}
+                    <tr class="gauge-row gauge-row-{{ gauge_info.status }}" data-status="{{ gauge_info.status }}" data-province="{{ gauge_info.gauge.province|default:'Unknown' }}">
+                        <td>
+                            {% if gauge_info.status == 'critical' %}
+                                <span class="status-badge status-critical">🚨 Critical</span>
+                            {% elif gauge_info.status == 'warning' %}
+                                <span class="status-badge status-warning">⚠️ Warning</span>
+                            {% elif gauge_info.status == 'stale' %}
+                                <span class="status-badge status-stale">⏰ Stale</span>
+                            {% elif gauge_info.status == 'no_data' %}
+                                <span class="status-badge status-no-data">📊 No Data</span>
+                            {% else %}
+                                <span class="status-badge status-normal">✅ Normal</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ gauge_info.gauge.gauge_id }}</td>
+                        <td>{{ gauge_info.gauge.name }}</td>
+                        <td>
+                            {% if gauge_info.gauge.province %}
+                                <div style="margin-bottom: 5px;">
+                                    <span style="background: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: bold;">
+                                        {{ gauge_info.gauge.province }}
+                                    </span>
+                                </div>
+                                {% if gauge_info.gauge.district %}
+                                    <div style="font-weight: 500; color: #333;">{{ gauge_info.gauge.district }}</div>
+                                {% endif %}
+                                {% if gauge_info.gauge.tehsil %}
+                                    <div style="color: #666; font-size: 13px;">{{ gauge_info.gauge.tehsil }}</div>
+                                {% endif %}
+                            {% else %}
+                                <div style="color: #666;">{{ gauge_info.gauge.location|default:"Location data pending" }}</div>
+                            {% endif %}
+                            <div style="margin-top: 5px;">
+                                <small style="color: #888; font-family: monospace;">
+                                    📍 {{ gauge_info.gauge.latitude|floatformat:4 }}, {{ gauge_info.gauge.longitude|floatformat:4 }}
+                                </small>
+                            </div>
+                        </td>
+                        <td>
+                            {% if gauge_info.gauge.quality_verified %}
+                                <span style="color: #28a745;">✓ Verified</span>
+                            {% else %}
+                                <span style="color: #ffc107;">⚠ Unverified</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ gauge_info.time_since_update }}</td>
+                        <td>
+                            {% if gauge_info.latest_reading %}
+                                <strong>{{ gauge_info.latest_reading.water_level|floatformat:2 }}</strong>
+                                {% if gauge_info.latest_reading.flow_rate %}
+                                    <small>({{ gauge_info.latest_reading.flow_rate|floatformat:2 }} m³/s)</small>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if gauge_info.last_update %}
+                                {{ gauge_info.last_update|date:"Y-m-d H:i" }}
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        </div>
+        
+        {% if page_obj %}
+        <div style="margin-top: 15px; text-align: center;">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="btn" style="background-color: #6c757d;">← Previous</a>
+            {% endif %}
+            
+            <span style="margin: 0 15px;">Page {{ page_obj.number }} of {{ total_pages }}</span>
+            
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="btn" style="background-color: #6c757d;">Next →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% else %}
+        <p>No gauges found. Data collection is managed through the admin panel.</p>
+        {% endif %}
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="section">
+        <h2>Recent Readings (Historical Data)</h2>
+        {% if recent_readings %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Gauge</th>
+                    <th>Water Level (m³/s)</th>
+                    <th>Flow Rate (m³/s)</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reading in recent_readings %}
+                <tr>
+                    <td>{{ reading.timestamp|date:"Y-m-d H:i:s" }}</td>
+                    <td>{{ reading.gauge.name }} <small>({{ reading.gauge.gauge_id }})</small></td>
+                    <td>{{ reading.water_level|floatformat:2 }}</td>
+                    <td>{{ reading.flow_rate|floatformat:2|default:"-" }}</td>
+                    <td>
+                        {% if reading.water_level >= 15.0 %}
+                            <span class="status-badge status-critical">Critical</span>
+                        {% elif reading.water_level >= 10.0 %}
+                            <span class="status-badge status-warning">Warning</span>
+                        {% else %}
+                            <span class="status-badge status-normal">Normal</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No recent readings available. Data collection is managed through the admin panel.</p>
+        {% endif %}
+    </div>
+
+    <!-- Flood Predictions -->
+    {% if recent_predictions %}
+    <div class="section">
+        <h2>Upcoming Flood Predictions</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Prediction For</th>
+                    <th>Gauge</th>
+                    <th>Predicted Level (m³/s)</th>
+                    <th>Risk Assessment</th>
+                    <th>Time Until</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prediction in recent_predictions %}
+                <tr>
+                    <td>{{ prediction.prediction_for_timestamp|date:"Y-m-d H:i:s" }}</td>
+                    <td>{{ prediction.gauge.name }} <small>({{ prediction.gauge.gauge_id }})</small></td>
+                    <td>{{ prediction.water_level|floatformat:2 }}</td>
+                    <td>
+                        {% if prediction.water_level >= 15.0 %}
+                            <span class="status-badge status-critical">🚨 High Risk</span>
+                        {% elif prediction.water_level >= 10.0 %}
+                            <span class="status-badge status-warning">⚠️ Moderate Risk</span>
+                        {% else %}
+                            <span class="status-badge status-normal">✅ Low Risk</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% now "U" as current_timestamp %}
+                        {% if prediction.prediction_for_timestamp|date:"U" > current_timestamp %}
+                            <small>Future</small>
+                        {% else %}
+                            <small>Current</small>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <script>
+    function filterGauges(status) {
+        // Update active button (only for status filters)
+        document.querySelectorAll('.filter-btn:not(.province-filter)').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Apply both status and province filters
+        applyFilters();
+    }
+    
+    function filterByProvince(province) {
+        // Update active button (only for province filters)
+        document.querySelectorAll('.province-filter').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Apply both status and province filters
+        applyFilters();
+    }
+    
+    function applyFilters() {
+        const activeStatusBtn = document.querySelector('.filter-btn:not(.province-filter).active');
+        const activeProvinceBtn = document.querySelector('.province-filter.active');
+        
+        const selectedStatus = activeStatusBtn ? activeStatusBtn.textContent.split(' ')[0].toLowerCase() : 'all';
+        const selectedProvince = activeProvinceBtn ? activeProvinceBtn.textContent.split(' ')[0] : 'all';
+        
+        // Filter table rows
+        const rows = document.querySelectorAll('.gauge-row');
+        rows.forEach(row => {
+            const rowStatus = row.dataset.status;
+            const rowProvince = row.dataset.province;
+            
+            const statusMatch = selectedStatus === 'all' || 
+                               (selectedStatus === 'all' && rowStatus) ||
+                               rowStatus === selectedStatus;
+            
+            const provinceMatch = selectedProvince === 'all' || 
+                                 selectedProvince === 'All' ||
+                                 rowProvince === selectedProvince;
+            
+            if (statusMatch && provinceMatch) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    </script>
+</body>
+</html>

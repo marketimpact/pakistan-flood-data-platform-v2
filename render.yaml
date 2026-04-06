@@ -1,0 +1,53 @@
+services:
+  - type: web
+    name: flood-data-platform
+    env: python
+    buildCommand: "./build.sh"
+    preDeployCommand: "chmod +x scripts/deploy_setup.sh && bash scripts/deploy_setup.sh"
+    startCommand: "cd src && gunicorn config.wsgi:application"
+    plan: free
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: flood-data-platform-db
+          property: connectionString
+      - key: ADMIN_USER
+        value: admin
+      - key: ADMIN_EMAIL
+        value: admin@example.com
+      - key: ADMIN_PASS
+        value: "Admin2025!"
+      - key: GOOGLE_FLOOD_HUB_API_KEY
+        value: AIzaSyB0d7jLuqXjDJW_BQxOyCrBVt97zse7S-M
+      - key: GOOGLE_GEOCODING_API_KEY
+        value: AIzaSyCu8yng-tY0vS-KtPVUcs4vKtOVmsNEEUc
+
+  - type: cron
+    name: daily-flood-data-collection
+    env: python
+    schedule: "0 2 * * *"  # Daily at 2 AM UTC (7 AM Pakistan time)
+    buildCommand: "./build.sh"
+    startCommand: "cd /opt/render/project/src && bash ../scripts/daily_collection.sh"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: flood-data-platform-db
+          property: connectionString
+      - key: GOOGLE_FLOOD_HUB_API_KEY
+        value: AIzaSyB0d7jLuqXjDJW_BQxOyCrBVt97zse7S-M
+      - key: GOOGLE_GEOCODING_API_KEY
+        value: AIzaSyCu8yng-tY0vS-KtPVUcs4vKtOVmsNEEUc
+
+databases:
+  - name: flood-data-platform-db
+    databaseName: flood_data_platform
+    user: flood_user
+    plan: free
